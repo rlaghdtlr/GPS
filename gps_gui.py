@@ -79,6 +79,13 @@ class GPSGUI:
             row=5, column=1, padx=5, pady=5
         )
 
+        # GPS 품질
+        ttk.Label(data_frame, text="GPS 품질:").grid(row=6, column=0, padx=5, pady=5)
+        self.gps_quality_var = tk.StringVar(value="N/A")
+        ttk.Label(data_frame, textvariable=self.gps_quality_var).grid(
+            row=6, column=1, padx=5, pady=5
+        )
+
         # 상태 표시
         self.status_var = tk.StringVar(value="연결되지 않음")
         ttk.Label(self.root, textvariable=self.status_var).pack(pady=5)
@@ -169,8 +176,29 @@ class GPSGUI:
                             # GGA 메시지 처리
                             if msg.gps_qual > 0:  # GPS 품질이 0보다 큰 경우
                                 self.sat_count_var.set(str(msg.num_sats))
+                                # GPS 품질 표시
+                                quality_map = {
+                                    0: "유효하지 않음",
+                                    1: "GPS 수신",
+                                    2: "DGPS 수신",
+                                    3: "PPS 수신",
+                                    4: "RTK 고정",
+                                    5: "RTK 부동",
+                                    6: "추정",
+                                    7: "수동",
+                                    8: "시뮬레이션",
+                                }
+                                self.gps_quality_var.set(
+                                    quality_map.get(msg.gps_qual, "알 수 없음")
+                                )
                             else:
                                 self.sat_count_var.set("0")
+                                self.gps_quality_var.set("유효하지 않음")
+
+                        elif isinstance(msg, pynmea2.VTG):
+                            # VTG 메시지 처리 (속도 정보)
+                            if msg.spd_over_grnd_kmph is not None:
+                                self.speed_var.set(f"{msg.spd_over_grnd_kmph:.2f}")
 
                     except pynmea2.ParseError as e:
                         self.debug_print(f"NMEA 파싱 오류: {str(e)}")
